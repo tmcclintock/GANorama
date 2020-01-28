@@ -4,12 +4,12 @@ import numpy.testing as npt
 import pytest
 
 def test_VAEorama_smoketest():
-    M, N = 4, 8
+    M, N = 8, 8
     data = np.random.randn(128, M, N, 3)
     V = PA.VAEorama(data)
 
 def test_attributes():
-    M, N = 4, 8
+    M, N = 16, 128
     LD = 100
     BS = 25
     data = np.random.randn(128, M, N, 3)
@@ -24,4 +24,5 @@ def obs_test_training():
     V.train(10)
 
 if __name__ == "__main__":
-    test_attributes()
+    test_VAEorama_smoketest()
+    #test_attributes()

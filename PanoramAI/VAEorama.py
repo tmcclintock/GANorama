@@ -3,6 +3,7 @@ from .generic import GENERICorama
 import numpy as np
 
 import tensorflow as tf
+import tensorflow.keras.layers as tfkl
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.models import Model, Sequential
 
@@ -31,4 +32,41 @@ class VAEorama(GENERICorama):
                  BATCH_SIZE = 64, test_size = 0.25,
                  latent_dim = 100):
         super().__init__(dataset, BATCH_SIZE, test_size, latent_dim)
+
+    def create_model(self):
+        """Create the convolutional variation autoencoder
+        model. This function is called automatically by the 
+        constructor of the superclass.
+
+        """
+        M, N = self.dimensions
+        latent_dim = self.latent_dim
+
+        self.encoder = Sequential([
+            tfkl.InputLayer(input_shape=(M, N, 3)), 
+            tfkl.Conv2D(
+                filters=32, kernel_size=3, strides=(2, 2),
+                activation='relu', padding="valid"),
+            tfkl.Conv2D(
+                filters=64, kernel_size=3, strides=(2, 2),
+                activation='relu', padding="valid"),
+            tfkl.Flatten(),
+            #predicting mean and logvar
+            tfkl.Dense(latent_dim + latent_dim)
+        ])
         
+        self.decoder = Sequential([
+            tfkl.InputLayer(input_shape=(latent_dim,)),
+            tfkl.Dense(units= M * N * 4, activation='relu'),
+            tfkl.Reshape(target_shape=(M//4, N//4, 64)),
+            tfkl.Conv2DTranspose(
+                filters=64, kernel_size=3, strides=(2, 2),
+                padding="SAME", activation='relu'),
+            tfkl.Conv2DTranspose(
+                filters=32, kernel_size=3, strides=(2, 2),
+                padding="SAME", activation='relu'),
+            tfkl.Conv2DTranspose(
+                filters=3, kernel_size=3, strides=(1, 1), padding="SAME",
+                activation='sigmoid'),
+        ])
+

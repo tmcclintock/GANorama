@@ -20,6 +20,9 @@ class GENERICorama(object):
         self.dimensions = dataset.shape[1:3]
         self.dimensions[0] % 4 == 0
         self.dimensions[1] % 4 == 0
+        
+        self.dimensions[0] >= 8 == 0
+        self.dimensions[1] >= 8 == 0
 
         assert type(BATCH_SIZE) == int
         self.BATCH_SIZE = BATCH_SIZE
