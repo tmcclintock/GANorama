@@ -14,7 +14,6 @@ def test_attributes():
     BS = 25
     data = np.random.randn(128, M, N, 3)
     V = PA.VAEorama(data, latent_dim = LD, BATCH_SIZE = BS)
-    print(dir(V))
     npt.assert_equal(V.dimensions, [M, N])
     npt.assert_equal(V.latent_dim, LD)
     npt.assert_equal(V.BATCH_SIZE, BS)
