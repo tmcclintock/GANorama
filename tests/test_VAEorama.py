@@ -3,17 +3,26 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-def test_VAEorama():
-    #Smoke test
-    M, N = 16, 128
+def test_VAEorama_smoketest():
+    M, N = 4, 8
     data = np.random.randn(128, M, N, 3)
-    V = PA.VAEorama(data, M, N)
+    V = PA.VAEorama(data)
 
-def test_training():
-    M, N = 16, 128
+def test_attributes():
+    M, N = 4, 8
+    LD = 100
+    BS = 25
     data = np.random.randn(128, M, N, 3)
-    V = PA.VAEorama(data, M, N)
+    V = PA.VAEorama(data, latent_dim = LD, BATCH_SIZE = BS)
+    print(dir(V))
+    npt.assert_equal(V.dimensions, [M, N])
+    npt.assert_equal(V.latent_dim, LD)
+    npt.assert_equal(V.BATCH_SIZE, BS)
+
+def obs_test_training():
+    data = np.random.randn(128, 4, 8, 3)
+    V = PA.VAEorama(data)
     V.train(10)
 
 if __name__ == "__main__":
-    test_training()
+    test_attributes()
