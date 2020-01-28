@@ -5,14 +5,14 @@ import pytest
 
 def test_VAEorama():
     #Smoke test
-    V = PA.VAEorama()
+    M, N = 16, 128
+    data = np.random.randn(128, M, N, 3)
+    V = PA.VAEorama(data, M, N)
 
 def test_training():
     M, N = 16, 128
-    data = np.random.randn(100, M, N, 3)
-    V = PA.VAEorama(
-        M, N, train_dataset=data,
-        test_dataset=data, BATCH_SIZE=25)
+    data = np.random.randn(128, M, N, 3)
+    V = PA.VAEorama(data, M, N)
     V.train(10)
 
 if __name__ == "__main__":

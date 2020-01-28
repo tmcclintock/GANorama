@@ -26,11 +26,10 @@ class VAEorama(object):
         BATCH_SIZE (int): batch size for training
 
     """
-    def __init__(self, M = 8, N = 64,
+    def __init__(self, train_dataset, M = 8, N = 64,
                  latent_dim = 200,
                  n_samples_to_generate = 16,
                  optimizer = None,
-                 train_dataset = None,
                  test_dataset = None,
                  BATCH_SIZE = 64):
         assert M % 4 == 0
@@ -50,10 +49,11 @@ class VAEorama(object):
         self.TESTING_LOSS = []
         self.RECORDED_EPOCHS = []
         
-        if train_dataset is not None:
-            self.set_train_dataset(train_dataset)
+        self.set_train_dataset(train_dataset)
         if test_dataset is not None:
             self.set_test_dataset(test_dataset)
+        else:
+            self.test_dataset = None
             
         self._generate_random_vector(n_samples_to_generate)
 
@@ -139,8 +139,9 @@ class VAEorama(object):
             if epoch % steps_for_update == 0:
                 end_time = time.time()
                 loss = tf.keras.metrics.Mean()
-                for test_x in self.test_dataset:
-                    loss(self.compute_loss(test_x))
+                if self.test_dataset is not None:
+                    for test_x in self.test_dataset:
+                        loss(self.compute_loss(test_x))
                 elbo = -loss.result()
                 self.TESTING_LOSS.append(elbo)
                 self.RECORDED_EPOCHS.append(epoch)
@@ -200,37 +201,32 @@ class _CVAE(tf.keras.Model):
         super(_CVAE, self).__init__()        
         self.input_dims = [M, N]
         self.latent_dim = latent_dim
-        self.inference_net = tf.keras.Sequential(
-            [
-                tf.keras.layers.InputLayer(input_shape=(M, N, 3)), #(bs, M, N, 3)
-                tf.keras.layers.Conv2D(
-                    filters=32, kernel_size=3, strides=(2, 2),
-                    activation='relu', padding="valid"), #(bs, M/2, N/2, 32)
-                tf.keras.layers.Conv2D(
-                    filters=64, kernel_size=3, strides=(2, 2), #(bs, M/4, N/4, 64)
-                    activation='relu', padding="valid"),
-                tf.keras.layers.Flatten(), #(bs, (M/4) * (N/4) * 64)
-                #predicting mean and logvar
-                tf.keras.layers.Dense(latent_dim + latent_dim), # (bs, D * D)
-            ]
-        )
-
-        self.generative_net = tf.keras.Sequential(
-            [
-                tf.keras.layers.InputLayer(input_shape=(latent_dim,)), #(bs, D)
-                tf.keras.layers.Dense(units= M * N * 4, activation=tf.nn.relu), #M * N * 4 = (M/4)*(N/4)*64
-                tf.keras.layers.Reshape(target_shape=(M//4, N//4, 64)),
-                tf.keras.layers.Conv2DTranspose(
-                    filters=64, kernel_size=3, strides=(2, 2),
-                    padding="SAME", activation='relu'), #(bs, M/2, N/2, 64)
-                tf.keras.layers.Conv2DTranspose(
-                    filters=32, kernel_size=3, strides=(2, 2),
-                    padding="SAME", activation='relu'), #(bs, M, N, 32)
-                tf.keras.layers.Conv2DTranspose(
-                    filters=3, kernel_size=3, strides=(1, 1), padding="SAME",
-                    activation='sigmoid'), #(bs, M, N, 3)
-            ]
-        )
+        self.inference_net = tf.keras.Sequential([
+            tf.keras.layers.InputLayer(input_shape=(M, N, 3)), #(bs, M, N, 3)
+            tf.keras.layers.Conv2D(
+                filters=32, kernel_size=3, strides=(2, 2),
+                activation='relu', padding="valid"), #(bs, M/2, N/2, 32)
+            tf.keras.layers.Conv2D(
+                filters=64, kernel_size=3, strides=(2, 2), #(bs, M/4, N/4, 64)
+                activation='relu', padding="valid"),
+            tf.keras.layers.Flatten(), #(bs, (M/4) * (N/4) * 64)
+            #predicting mean and logvar
+            tf.keras.layers.Dense(latent_dim + latent_dim), # (bs, D * D)
+        ])
+        self.generative_net = tf.keras.Sequential([
+            tf.keras.layers.InputLayer(input_shape=(latent_dim,)), #(bs, D)
+            tf.keras.layers.Dense(units= M * N * 4, activation=tf.nn.relu), #M * N * 4 = (M/4)*(N/4)*64
+            tf.keras.layers.Reshape(target_shape=(M//4, N//4, 64)),
+            tf.keras.layers.Conv2DTranspose(
+                filters=64, kernel_size=3, strides=(2, 2),
+                padding="SAME", activation='relu'), #(bs, M/2, N/2, 64)
+            tf.keras.layers.Conv2DTranspose(
+                filters=32, kernel_size=3, strides=(2, 2),
+                padding="SAME", activation='relu'), #(bs, M, N, 32)
+            tf.keras.layers.Conv2DTranspose(
+                filters=3, kernel_size=3, strides=(1, 1), padding="SAME",
+                activation='sigmoid'), #(bs, M, N, 3)
+        ])
         
     @tf.function
     def sample(self, eps=None):
