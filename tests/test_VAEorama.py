@@ -8,7 +8,7 @@ def test_VAEorama_smoketest():
     data = np.random.randn(128, M, N, 3)
     V = PA.VAEorama(data)
 
-def test_attributes():
+def obs_test_attributes():
     M, N = 16, 128
     LD = 100
     BS = 25

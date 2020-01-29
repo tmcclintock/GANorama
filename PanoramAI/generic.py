@@ -36,6 +36,7 @@ class GENERICorama(object):
         self.test_dataset = tf.data.Dataset.from_tensor_slices(
             test).batch(self.BATCH_SIZE)
 
+        self.reset_optimizer()
         self.create_model()
 
     def reset_optimizer(self, opt = tfk.optimizers.Adam):
