@@ -34,12 +34,12 @@ class GENERICorama(object):
             train).batch(self.BATCH_SIZE)
         self.test_dataset = tf.data.Dataset.from_tensor_slices(
             test).batch(self.BATCH_SIZE)
+        
+        #Attributes to track loss
+        self.BEST_LOSS = -1e99
 
         self.reset_optimizer()
         self.create_model()
-
-        #Attributes to track loss
-        self.BEST_LOSS = -1e99
 
     def reset_optimizer(self, opt = tfk.optimizers.Adam):
         """Reset the optimizer attached to this generator.
@@ -50,19 +50,6 @@ class GENERICorama(object):
         """
         self.optimizer = opt(1e-4)
         return
-
-    def sample_latent_space(self, n_samples):
-        """Samples from the latent space, assuming a
-        multivariate standard normal; N(0,1) for each dimension.
-
-        Args:
-            n_samples (int): number of samples to make
-
-        Returns:
-            tensor of dimensions `n_samples` by `self.latent_dim`
-
-        """
-        return tf.random.normal(shape = [n_samples, self.latent_dim])
 
     def save_model(self, epoch, loss, recon, kl, save_path = "./models/"):
         """Write logs and save the model"""
