@@ -1,6 +1,7 @@
 from .generic import GENERICorama
 
 import numpy as np
+import time
 
 import tensorflow as tf
 import tensorflow.keras.layers as tfkl
@@ -33,6 +34,7 @@ class VAEorama(GENERICorama):
                  BATCH_SIZE = 64, test_size = 0.25,
                  latent_dim = 100):
         super().__init__(dataset, BATCH_SIZE, test_size, latent_dim)
+
 
     def _log_normal_pdf(self, sample, mean, logvar, raxis=1):
         """Log PDF of the multivariate normal distribution
@@ -115,12 +117,12 @@ class VAEorama(GENERICorama):
 
         self.encoder = Model(encoder_input, [Z_mu, Z_logvar, Z])
         self.decoder = Model(decoder_input, decoder_output)
-        self.vae = Model(encoder_input, self.decoder(Z))
-        self.vae.compile(optimizer=self.optimizer,
-                         loss=total_loss,
-                         metrics=[reconstruction_loss, kl_divergence])
+        self.model = Model(encoder_input, self.decoder(Z))
+        self.model.compile(optimizer=self.optimizer,
+                           loss=total_loss,
+                           metrics=[reconstruction_loss, kl_divergence])
 
-    def train(self, epochs, steps_for_update = None, quiet = False):
+    def train(self, epochs, quiet = False):
         """Train the networks in the convolutional VAE.
 
         Args:
@@ -130,35 +132,16 @@ class VAEorama(GENERICorama):
             quiet (bool): whether to give status updates
 
         """
-        if not steps_for_update:
-            steps_for_update = epochs // 10
-
         start_time = time.time()
-        for epoch in range(1, epochs + 1):
-            for train_x in self.train_dataset:
-                self.compute_apply_gradients(train_x)
 
-            if epoch % steps_for_update == 0:
-                end_time = time.time()
-                loss = tf.keras.metrics.Mean()
-                if self.test_dataset is not None:
-                    for test_x in self.test_dataset:
-                        loss(self.compute_loss(test_x))
-                elbo = -loss.result()
-                #self.TESTING_LOSS.append(elbo)
-                #self.RECORDED_EPOCHS.append(epoch)
+        # Training loop
+        for epoch in range(epochs):
+            for batch, X in enumerate(self.train_dataset):
+                loss, recon_err, kl = self.model.train_on_batch(X, X)
+                
+            self.save_model(epoch, loss, kl, recon_err)
 
-                if not quiet:
-                    print(f'Epoch: {epoch}, Test set ELBO: {elbo:.4f}, '
-                          f'time elapsed for current epoch batch {end_time - start_time:.4f}')
-                start_time = time.time()
-            if epoch == epochs:
-                break
-        #self.TOTAL_EPOCHS += epochs
-        #if not quiet:
-        #    print(f"Total epochs: {self.TOTAL_EPOCHS}")
-        return
-
+        print("Finished training.")
 
 def Conv(n_filters, filter_width, strides=2, activation="relu", name=None):
     return tfkl.Conv2D(n_filters, filter_width, 
@@ -184,3 +167,4 @@ class Reparameterize(tfkl.Layer):
     def call(self, inputs):
         Z_mu, Z_logvar = inputs
         return Z_mu + tf.math.exp(0.5 * Z_logvar) * tf.random.normal(tf.shape(Z_mu))
+

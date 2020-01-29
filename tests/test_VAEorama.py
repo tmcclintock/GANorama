@@ -8,7 +8,7 @@ def test_VAEorama_smoketest():
     data = np.random.randn(128, M, N, 3)
     V = PA.VAEorama(data)
 
-def obs_test_attributes():
+def test_attributes():
     M, N = 16, 128
     LD = 100
     BS = 25
@@ -18,11 +18,15 @@ def obs_test_attributes():
     npt.assert_equal(V.latent_dim, LD)
     npt.assert_equal(V.BATCH_SIZE, BS)
 
-def obs_test_training():
-    data = np.random.randn(128, 4, 8, 3)
-    V = PA.VAEorama(data)
+def test_training():
+    M, N = 16, 128
+    LD = 100
+    BS = 25
+    data = np.random.randn(128, M, N, 3)
+    V = PA.VAEorama(data, latent_dim = LD, BATCH_SIZE = BS)
     V.train(10)
 
 if __name__ == "__main__":
-    test_VAEorama_smoketest()
+    #test_VAEorama_smoketest()
     #test_attributes()
+    test_training()

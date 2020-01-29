@@ -1,5 +1,4 @@
 import numpy as np
-import time
 
 from sklearn.model_selection import train_test_split
 
@@ -39,6 +38,9 @@ class GENERICorama(object):
         self.reset_optimizer()
         self.create_model()
 
+        #Attributes to track loss
+        self.BEST_LOSS = -1e99
+
     def reset_optimizer(self, opt = tfk.optimizers.Adam):
         """Reset the optimizer attached to this generator.
 
@@ -62,6 +64,20 @@ class GENERICorama(object):
         """
         return tf.random.normal(shape = [n_samples, self.latent_dim])
 
+    def save_model(self, epoch, loss, recon, kl, save_path = "./models/"):
+        """Write logs and save the model"""
+        train_summary_writer = tf.summary.create_file_writer(summary_path)
+        with train_summary_writer.as_default():
+            tf.summary.scalar("Total Loss", loss, step=epoch)
+            tf.summary.scalar("KL Divergence", kl, step=epoch)
+            tf.summary.scalar("Reconstruction Loss", recon, step=epoch)
+
+        # save model
+        if loss < self.BEST_LOSS:
+            self.BEST_LOSS = loss
+            self.model.save(save_path+"BEST_MODEL")
+        self.model.save(save_path)
+        
     def create_model(self):
         """Create the generative model.
 
